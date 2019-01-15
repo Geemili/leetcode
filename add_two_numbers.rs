@@ -54,7 +54,7 @@ fn add_digits(l1: Option<Box<ListNode>>, l2: Option<Box<ListNode>>, carry: i32) 
     };
 
     let carry = sum / 10;
-    let val = sum - carry;
+    let val = sum - (carry * 10);
 
     let mut digit = Box::new(ListNode::new(val));
 

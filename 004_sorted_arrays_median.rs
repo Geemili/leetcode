@@ -3,22 +3,50 @@ impl Solution {
     pub fn find_median_sorted_arrays(nums1: Vec<i32>, nums2: Vec<i32>) -> f64 {
         let lists = [&nums1[..], &nums2[..]];
         let lists = &lists[..];
-        let mut median_guess_indices = Vec::new();
         let mut first_median = None;
         for list in lists.iter() {
-            median_guess_indices.clear();
-            medians(list, &mut median_guess_indices);
-            for guess in median_guess_indices.iter() {
-                if Some(*guess) == first_median {
+            if list.len() == 0 { continue; }
+
+            // Do a binary search for the median; we know if the result is low or high
+            let mut left = 0;
+            let mut right = list.len()-1;
+            while left <= right {
+                // Don't check for something we've already confirmed to be a median,
+                // or else it will return it as *the* median
+                let middle = (left + right) / 2;
+                let guess = list[middle];
+
+                if Some(guess) == first_median {
                     continue;
                 }
-                let res = is_a_median(*guess, lists);
+
+                let res = is_a_median(guess, lists);
                 match (first_median, res) {
+                    (_, IsMedian::No(Dir::Lower)) => {
+                        if middle == 0 {
+                            // We don't want any underflows
+                            break;
+                        }
+                        right = middle - 1;
+                    }
+                    (_, IsMedian::No(Dir::Higher)) => {
+                        left = middle + 1;
+                    }
+                    (None, IsMedian::With(Dir::Lower)) => {
+                        first_median = Some(guess);
+                        if middle == 0 {
+                            // We don't want any underflows
+                            break;
+                        }
+                        right = middle - 1;
+                    }
+                    (None, IsMedian::With(Dir::Higher)) => {
+                        first_median = Some(guess);
+                        left = middle + 1;
+                    }
+                    (Some(first_median), IsMedian::With(_)) => return (guess as f64 + first_median as f64) / 2.0,
                     (Some(_), IsMedian::Yes) => panic!("Found definite median after indefinite median!"),
-                    (None, IsMedian::Yes) => return *guess as f64,
-                    (Some(first_median), IsMedian::WithOther) => return (*guess as f64 + first_median as f64) / 2.0,
-                    (None, IsMedian::WithOther) => first_median = Some(*guess),
-                    (_, IsMedian::No) => {}
+                    (None, IsMedian::Yes) => return guess as f64,
                 }
             }
         }
@@ -26,29 +54,19 @@ impl Solution {
     }
 }
 
-fn medians(list: &[i32], out: &mut Vec<i32>) {
-    if list.len() == 0 {
-    } else if list.len() % 2 == 0 {
-        // if its even, there are two middle numbers
-        let m1 = (list.len() - 1) / 2;
-        let m2 = m1 + 1;
-        out.push(list[m1]);
-        out.push(list[m2]);
-    } else if list.len() > 2 {
-        out.push(list[list.len() / 2] - 1);
-        out.push(list[list.len() / 2]);
-        out.push(list[list.len() / 2] + 1);
-    } else {
-        // The list is only one element
-        out.push(list[0]);
-    }
+#[derive(Debug)]
+enum Dir {
+    Lower,
+    Higher
 }
 
 #[derive(Debug)]
 enum IsMedian {
     Yes,
-    WithOther,
-    No,
+    /// This is *a* median, but you need one more in the specified direction
+    With(Dir),
+    /// This is not a median, and you can find one in the specified direction
+    No(Dir),
 }
 
 fn is_a_median(guess: i32, lists: &[&[i32]]) -> IsMedian {
@@ -75,10 +93,14 @@ fn is_a_median(guess: i32, lists: &[&[i32]]) -> IsMedian {
     let size = total_size - left - right;
     if left == right || (right > left && right - left < size) || (left > right && left - right < size) {
         IsMedian::Yes
-    } else if (right > left && right - left == size) || (left > right && left - right == size) {
-        IsMedian::WithOther
+    } else if (right > left && right - left == size) {
+        IsMedian::With(Dir::Higher)
+    } else if (left > right && left - right == size) {
+        IsMedian::With(Dir::Lower)
+    } else if right > left {
+        IsMedian::No(Dir::Higher)
     } else {
-        IsMedian::No
+        IsMedian::No(Dir::Lower)
     }
 }
 

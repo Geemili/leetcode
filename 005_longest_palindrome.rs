@@ -5,14 +5,17 @@ impl Solution {
         let mut longest_palindrome = String::new();
         longest_palindrome.push(chars[0]);
         for left in 0..chars.len() {
-            for right in (left+longest_palindrome.len())..chars.len() {
+            let mut right = chars.len()-1;
+            'INNER: while right >= (left+longest_palindrome.len()) {
                 let text = &chars[left..right+1];
                 if chars[left] == chars[right] && is_palindrome(text) {
                     longest_palindrome.clear();
                     for c in text {
                         longest_palindrome.push(*c);
                     }
+                    break 'INNER;
                 }
+                right -= 1;
             }
         }
         longest_palindrome

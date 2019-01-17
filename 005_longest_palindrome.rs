@@ -4,9 +4,11 @@ impl Solution {
         let chars: Vec<_> = s.chars().collect();
         let mut longest_palindrome = String::new();
         longest_palindrome.push(chars[0]);
-        for left in 0..chars.len() {
+
+        let mut left = 0;
+        while left + longest_palindrome.len() < chars.len() {
             let mut right = chars.len()-1;
-            'INNER: while right >= (left+longest_palindrome.len()) {
+            'INNER: while right-left+1 > longest_palindrome.len() {
                 let text = &chars[left..right+1];
                 if chars[left] == chars[right] && is_palindrome(text) {
                     longest_palindrome.clear();
@@ -17,6 +19,7 @@ impl Solution {
                 }
                 right -= 1;
             }
+            left += 1;
         }
         longest_palindrome
     }

@@ -7,4 +7,4 @@ outdir=$(dirname $outfile)
 
 mkdir -p $outdir
 
-rustc --test $file -o $outfile && ./$outfile
+nix-shell -p gcc --run "rustc --test $file -o $outfile && ./$outfile"
